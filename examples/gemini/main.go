@@ -9,6 +9,7 @@ import (
 	"google.golang.org/genai"
 )
 
+// ImageInfo represents structured information about an image
 type ImageInfo struct {
 	Description string   `json:"description" jsonschema:"title=Description,description=What is visible in the image"`
 	Objects     []string `json:"objects" jsonschema:"title=Objects,description=List of objects detected in the image"`
@@ -19,20 +20,23 @@ type ImageInfo struct {
 func main() {
 	ctx := context.Background()
 
+	// Create Google AI client
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey:  os.Getenv("GOOGLE_API_KEY"),
 		Backend: genai.BackendGeminiAPI,
 	})
 	if err != nil {
-		panic(fmt.Sprintf("Failed to create Gemini client: %v", err))
+		panic(fmt.Sprintf("Failed to create Google AI client: %v", err))
 	}
 
-	instructorClient := instructor.FromGemini(
+	// Create instructor client
+	instructorClient := instructor.FromGoogle(
 		client,
 		instructor.WithMode(instructor.ModeJSON),
 		instructor.WithMaxRetries(3),
 	)
 
+	// Read image file (replace with your image path)
 	imageBytes, err := os.ReadFile("examples/gemini/sample.jpg")
 	if err != nil {
 		fmt.Printf("Error reading image: %v\n", err)
@@ -40,6 +44,7 @@ func main() {
 		return
 	}
 
+	// Create multimodal content
 	contents := []*genai.Content{
 		{
 			Parts: []*genai.Part{
@@ -53,11 +58,13 @@ func main() {
 		},
 	}
 
-	request := instructor.GeminiRequest{
-		Model:    "gemini-2.5-flash",
+	// Create request
+	request := instructor.GoogleRequest{
+		Model:    "gemini-2.0-flash-exp",
 		Contents: contents,
 	}
 
+	// Get structured analysis
 	var imageInfo ImageInfo
 	_, err = instructorClient.CreateChatCompletion(ctx, request, &imageInfo)
 	if err != nil {
@@ -65,6 +72,7 @@ func main() {
 		return
 	}
 
+	// Print results
 	fmt.Println("📸 Image Analysis Results:")
 	fmt.Printf("Description: %s\n", imageInfo.Description)
 	fmt.Printf("Mood: %s\n", imageInfo.Mood)
@@ -77,4 +85,9 @@ func main() {
 		Objects: [gopher cartoon character mascot]
 		Colors: [light blue blue white black beige]
 	*/
+}
+
+func init() {
+	// Create the examples/gemini directory if it doesn't exist
+	os.MkdirAll("examples/gemini", 0755)
 }

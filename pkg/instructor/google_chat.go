@@ -9,26 +9,24 @@ import (
 	"google.golang.org/genai"
 )
 
-// No GeminiResponse struct here; use the one from gemini_struct.go
-
-func (i *InstructorGemini) CreateChatCompletion(
+func (i *InstructorGoogle) CreateChatCompletion(
 	ctx context.Context,
-	request GeminiRequest,
+	request GoogleRequest,
 	responseType any,
-) (response GeminiResponse, err error) {
+) (response GoogleResponse, err error) {
 	resp, err := chatHandler(i, ctx, request, responseType)
 	if err != nil {
 		if resp == nil {
-			return GeminiResponse{}, err
+			return GoogleResponse{}, err
 		}
-		return *nilGeminiRespWithUsage(resp.(*GeminiResponse)), err
+		return *nilGoogleRespWithUsage(resp.(*GoogleResponse)), err
 	}
-	response = *(resp.(*GeminiResponse))
+	response = *(resp.(*GoogleResponse))
 	return response, nil
 }
 
-func (i *InstructorGemini) chat(ctx context.Context, request interface{}, schema *Schema) (string, interface{}, error) {
-	req, ok := request.(GeminiRequest)
+func (i *InstructorGoogle) chat(ctx context.Context, request interface{}, schema *Schema) (string, interface{}, error) {
+	req, ok := request.(GoogleRequest)
 	if !ok {
 		return "", nil, fmt.Errorf("invalid request type for %s client", i.Provider())
 	}
@@ -48,8 +46,8 @@ func (i *InstructorGemini) chat(ctx context.Context, request interface{}, schema
 	}
 }
 
-func (i *InstructorGemini) chatToolCall(ctx context.Context, request *GeminiRequest, schema *Schema, strict bool) (string, *GeminiResponse, error) {
-	tools := createGeminiTools(schema, strict)
+func (i *InstructorGoogle) chatToolCall(ctx context.Context, request *GoogleRequest, schema *Schema, strict bool) (string, *GoogleResponse, error) {
+	tools := createGoogleTools(schema, strict)
 	if request.GenerationConfig == nil {
 		request.GenerationConfig = &genai.GenerationConfig{}
 	}
@@ -60,7 +58,7 @@ func (i *InstructorGemini) chatToolCall(ctx context.Context, request *GeminiRequ
 	if err != nil {
 		return "", nil, err
 	}
-	geminiResp := &GeminiResponse{
+	googleResp := &GoogleResponse{
 		Candidates:    resp.Candidates,
 		UsageMetadata: resp.UsageMetadata,
 	}
@@ -76,38 +74,38 @@ func (i *InstructorGemini) chatToolCall(ctx context.Context, request *GeminiRequ
 	}
 	numTools := len(toolCalls)
 	if numTools < 1 {
-		return "", nilGeminiRespWithUsage(geminiResp), errors.New("received no tool calls from model, expected at least 1")
+		return "", nilGoogleRespWithUsage(googleResp), errors.New("received no tool calls from model, expected at least 1")
 	}
 	if numTools == 1 {
 		argsJSON, err := json.Marshal(toolCalls[0].Args)
 		if err != nil {
-			return "", nilGeminiRespWithUsage(geminiResp), err
+			return "", nilGoogleRespWithUsage(googleResp), err
 		}
-		return string(argsJSON), geminiResp, nil
+		return string(argsJSON), googleResp, nil
 	}
 	jsonArray := make([]map[string]interface{}, len(toolCalls))
 	for i, toolCall := range toolCalls {
 		argsJSON, err := json.Marshal(toolCall.Args)
 		if err != nil {
-			return "", nilGeminiRespWithUsage(geminiResp), err
+			return "", nilGoogleRespWithUsage(googleResp), err
 		}
 		var jsonObj map[string]interface{}
 		err = json.Unmarshal(argsJSON, &jsonObj)
 		if err != nil {
-			return "", nilGeminiRespWithUsage(geminiResp), err
+			return "", nilGoogleRespWithUsage(googleResp), err
 		}
 		jsonArray[i] = jsonObj
 	}
 	resultJSON, err := json.Marshal(jsonArray)
 	if err != nil {
-		return "", nilGeminiRespWithUsage(geminiResp), err
+		return "", nilGoogleRespWithUsage(googleResp), err
 	}
-	return string(resultJSON), geminiResp, nil
+	return string(resultJSON), googleResp, nil
 }
 
-func (i *InstructorGemini) chatJSON(ctx context.Context, request *GeminiRequest, schema *Schema, strict bool) (string, *GeminiResponse, error) {
+func (i *InstructorGoogle) chatJSON(ctx context.Context, request *GoogleRequest, schema *Schema, strict bool) (string, *GoogleResponse, error) {
 	structName := schema.NameFromRef()
-	request.Contents = prependGeminiContents(request.Contents, *createGeminiJSONMessage(schema))
+	request.Contents = prependGoogleContents(request.Contents, *createGoogleJSONMessage(schema))
 	if strict {
 		if request.GenerationConfig == nil {
 			request.GenerationConfig = &genai.GenerationConfig{}
@@ -119,7 +117,7 @@ func (i *InstructorGemini) chatJSON(ctx context.Context, request *GeminiRequest,
 	if err != nil {
 		return "", nil, err
 	}
-	geminiResp := &GeminiResponse{
+	googleResp := &GoogleResponse{
 		Candidates:    resp.Candidates,
 		UsageMetadata: resp.UsageMetadata,
 	}
@@ -138,18 +136,18 @@ func (i *InstructorGemini) chatJSON(ctx context.Context, request *GeminiRequest,
 		cleanedText, _ := json.Marshal(resMap[structName])
 		text = string(cleanedText)
 	}
-	return text, geminiResp, nil
+	return text, googleResp, nil
 }
 
-func (i *InstructorGemini) chatJSONSchema(ctx context.Context, request *GeminiRequest, schema *Schema) (string, *GeminiResponse, error) {
-	request.Contents = prependGeminiContents(request.Contents, *createGeminiJSONMessage(schema))
+func (i *InstructorGoogle) chatJSONSchema(ctx context.Context, request *GoogleRequest, schema *Schema) (string, *GoogleResponse, error) {
+	request.Contents = prependGoogleContents(request.Contents, *createGoogleJSONMessage(schema))
 	resp, err := i.Models.GenerateContent(ctx, request.Model, request.Contents, &genai.GenerateContentConfig{
 		SafetySettings: request.SafetySettings,
 	})
 	if err != nil {
 		return "", nil, err
 	}
-	geminiResp := &GeminiResponse{
+	googleResp := &GoogleResponse{
 		Candidates:    resp.Candidates,
 		UsageMetadata: resp.UsageMetadata,
 	}
@@ -162,10 +160,10 @@ func (i *InstructorGemini) chatJSONSchema(ctx context.Context, request *GeminiRe
 			}
 		}
 	}
-	return text, geminiResp, nil
+	return text, googleResp, nil
 }
 
-func createGeminiJSONMessage(schema *Schema) *genai.Content {
+func createGoogleJSONMessage(schema *Schema) *genai.Content {
 	schemaJSON, _ := json.Marshal(schema.Schema)
 	return &genai.Content{
 		Parts: []*genai.Part{
@@ -177,7 +175,7 @@ func createGeminiJSONMessage(schema *Schema) *genai.Content {
 	}
 }
 
-func createGeminiTools(schema *Schema, strict bool) []*genai.Tool {
+func createGoogleTools(schema *Schema, strict bool) []*genai.Tool {
 	// TODO: Convert schema.Schema.Properties to map[string]*genai.Schema if needed
 	tool := &genai.Tool{
 		FunctionDeclarations: []*genai.FunctionDeclaration{
@@ -195,6 +193,6 @@ func createGeminiTools(schema *Schema, strict bool) []*genai.Tool {
 	return []*genai.Tool{tool}
 }
 
-func prependGeminiContents(contents []*genai.Content, content genai.Content) []*genai.Content {
+func prependGoogleContents(contents []*genai.Content, content genai.Content) []*genai.Content {
 	return append([]*genai.Content{&content}, contents...)
 }

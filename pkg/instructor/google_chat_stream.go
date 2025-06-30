@@ -9,9 +9,9 @@ import (
 	"google.golang.org/genai"
 )
 
-func (i *InstructorGemini) CreateChatCompletionStream(
+func (i *InstructorGoogle) CreateChatCompletionStream(
 	ctx context.Context,
-	request GeminiRequest,
+	request GoogleRequest,
 	responseType any,
 ) (stream <-chan string, err error) {
 
@@ -34,9 +34,9 @@ func (i *InstructorGemini) CreateChatCompletionStream(
 	return stringCh, nil
 }
 
-func (i *InstructorGemini) chatStream(ctx context.Context, request interface{}, schema *Schema) (<-chan string, error) {
+func (i *InstructorGoogle) chatStream(ctx context.Context, request interface{}, schema *Schema) (<-chan string, error) {
 
-	req, ok := request.(GeminiRequest)
+	req, ok := request.(GoogleRequest)
 	if !ok {
 		return nil, fmt.Errorf("invalid request type for %s client", i.Provider())
 	}
@@ -57,17 +57,17 @@ func (i *InstructorGemini) chatStream(ctx context.Context, request interface{}, 
 	}
 }
 
-func (i *InstructorGemini) chatStreamToolCall(ctx context.Context, request *GeminiRequest, schema *Schema, strict bool) (<-chan string, error) {
-	// Gemini doesn't support streaming with tool calls in the same way as OpenAI
+func (i *InstructorGoogle) chatStreamToolCall(ctx context.Context, request *GoogleRequest, schema *Schema, strict bool) (<-chan string, error) {
+	// Google doesn't support streaming with tool calls in the same way as OpenAI
 	// We'll need to implement this differently or return an error
-	return nil, errors.New("streaming with tool calls is not supported for Gemini")
+	return nil, errors.New("streaming with tool calls is not supported for Google")
 }
 
-func (i *InstructorGemini) chatStreamJSON(ctx context.Context, request *GeminiRequest, schema *Schema, strict bool) (<-chan string, error) {
+func (i *InstructorGoogle) chatStreamJSON(ctx context.Context, request *GoogleRequest, schema *Schema, strict bool) (<-chan string, error) {
 	structName := schema.NameFromRef()
 
 	// Prepend JSON instruction message
-	request.Contents = prependGeminiContents(request.Contents, *createGeminiJSONMessage(schema))
+	request.Contents = prependGoogleContents(request.Contents, *createGoogleJSONMessage(schema))
 
 	// Create config (do not use GenerationConfig field)
 	config := &genai.GenerateContentConfig{
@@ -117,8 +117,8 @@ func (i *InstructorGemini) chatStreamJSON(ctx context.Context, request *GeminiRe
 	return ch, nil
 }
 
-func (i *InstructorGemini) chatStreamJSONSchema(ctx context.Context, request *GeminiRequest, schema *Schema) (<-chan string, error) {
-	request.Contents = prependGeminiContents(request.Contents, *createGeminiJSONMessage(schema))
+func (i *InstructorGoogle) chatStreamJSONSchema(ctx context.Context, request *GoogleRequest, schema *Schema) (<-chan string, error) {
+	request.Contents = prependGoogleContents(request.Contents, *createGoogleJSONMessage(schema))
 
 	// Create config (do not use GenerationConfig field)
 	config := &genai.GenerateContentConfig{

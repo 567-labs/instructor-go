@@ -4,7 +4,7 @@ import (
 	"google.golang.org/genai"
 )
 
-type InstructorGemini struct {
+type InstructorGoogle struct {
 	*genai.Client
 
 	provider   Provider
@@ -13,13 +13,13 @@ type InstructorGemini struct {
 	validate   bool
 }
 
-func FromGemini(client *genai.Client, opts ...Options) *InstructorGemini {
+func FromGoogle(client *genai.Client, opts ...Options) *InstructorGoogle {
 	options := mergeOptions(opts...)
 
-	i := &InstructorGemini{
+	i := &InstructorGoogle{
 		Client: client,
 
-		provider:   ProviderGemini,
+		provider:   ProviderGoogle,
 		mode:       *options.Mode,
 		maxRetries: *options.MaxRetries,
 		validate:   *options.validate,
@@ -27,38 +27,38 @@ func FromGemini(client *genai.Client, opts ...Options) *InstructorGemini {
 	return i
 }
 
-func (i *InstructorGemini) Provider() Provider {
+func (i *InstructorGoogle) Provider() Provider {
 	return i.provider
 }
 
-func (i *InstructorGemini) Mode() Mode {
+func (i *InstructorGoogle) Mode() Mode {
 	return i.mode
 }
 
-func (i *InstructorGemini) MaxRetries() int {
+func (i *InstructorGoogle) MaxRetries() int {
 	return i.maxRetries
 }
 
-func (i *InstructorGemini) Validate() bool {
+func (i *InstructorGoogle) Validate() bool {
 	return i.validate
 }
 
-// GeminiRequest represents a request to the Gemini API
-type GeminiRequest struct {
+// GoogleRequest represents a request to the Google AI API
+type GoogleRequest struct {
 	Model            string                  `json:"model"`
 	Contents         []*genai.Content        `json:"contents"`
 	GenerationConfig *genai.GenerationConfig `json:"generationConfig,omitempty"`
 	SafetySettings   []*genai.SafetySetting  `json:"safetySettings,omitempty"`
 }
 
-// GeminiResponse represents a response from the Gemini API
-type GeminiResponse struct {
+// GoogleResponse represents a response from the Google AI API
+type GoogleResponse struct {
 	Candidates    []*genai.Candidate                          `json:"candidates"`
 	UsageMetadata *genai.GenerateContentResponseUsageMetadata `json:"usageMetadata,omitempty"`
 }
 
-func (i *InstructorGemini) emptyResponseWithUsageSum(usage *UsageSum) interface{} {
-	return &GeminiResponse{
+func (i *InstructorGoogle) emptyResponseWithUsageSum(usage *UsageSum) interface{} {
+	return &GoogleResponse{
 		UsageMetadata: &genai.GenerateContentResponseUsageMetadata{
 			PromptTokenCount:     int32(usage.InputTokens),
 			CandidatesTokenCount: int32(usage.OutputTokens),
@@ -67,19 +67,19 @@ func (i *InstructorGemini) emptyResponseWithUsageSum(usage *UsageSum) interface{
 	}
 }
 
-func (i *InstructorGemini) emptyResponseWithResponseUsage(response interface{}) interface{} {
-	resp, ok := response.(*GeminiResponse)
+func (i *InstructorGoogle) emptyResponseWithResponseUsage(response interface{}) interface{} {
+	resp, ok := response.(*GoogleResponse)
 	if !ok || resp == nil {
 		return nil
 	}
 
-	return &GeminiResponse{
+	return &GoogleResponse{
 		UsageMetadata: resp.UsageMetadata,
 	}
 }
 
-func (i *InstructorGemini) addUsageSumToResponse(response interface{}, usage *UsageSum) (interface{}, error) {
-	resp, ok := response.(*GeminiResponse)
+func (i *InstructorGoogle) addUsageSumToResponse(response interface{}, usage *UsageSum) (interface{}, error) {
+	resp, ok := response.(*GoogleResponse)
 	if !ok || resp == nil {
 		return response, nil
 	}
@@ -95,8 +95,8 @@ func (i *InstructorGemini) addUsageSumToResponse(response interface{}, usage *Us
 	return resp, nil
 }
 
-func (i *InstructorGemini) countUsageFromResponse(response interface{}, usage *UsageSum) *UsageSum {
-	resp, ok := response.(*GeminiResponse)
+func (i *InstructorGoogle) countUsageFromResponse(response interface{}, usage *UsageSum) *UsageSum {
+	resp, ok := response.(*GoogleResponse)
 	if !ok || resp == nil || resp.UsageMetadata == nil {
 		return usage
 	}
@@ -108,9 +108,9 @@ func (i *InstructorGemini) countUsageFromResponse(response interface{}, usage *U
 	return usage
 }
 
-func nilGeminiRespWithUsage(resp *GeminiResponse) *GeminiResponse {
+func nilGoogleRespWithUsage(resp *GoogleResponse) *GoogleResponse {
 	if resp == nil {
-		return &GeminiResponse{}
+		return &GoogleResponse{}
 	}
 	return resp
 }

@@ -105,7 +105,7 @@ Instructor Go supports the following LLM provider APIs:
 - [OpenAI](https://github.com/sashabaranov/go-openai)
 - [Anthropic](https://github.com/liushuangls/go-anthropic)
 - [Cohere](github.com/cohere-ai/cohere-go)
-- [Google Gemini](github.com/googleapis/go-genai)
+- [Google](github.com/googleapis/go-genai)
 
 ### Usage (token counts)
 
