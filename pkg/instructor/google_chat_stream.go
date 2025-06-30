@@ -9,6 +9,11 @@ import (
 	"google.golang.org/genai"
 )
 
+// Error constants for Google streaming
+const (
+	ErrIteratorDone = "iterator done"
+)
+
 func (i *InstructorGoogle) CreateChatCompletionStream(
 	ctx context.Context,
 	request GoogleRequest,
@@ -87,7 +92,7 @@ func (i *InstructorGoogle) chatStreamJSON(ctx context.Context, request *GoogleRe
 		iter(func(resp *genai.GenerateContentResponse, err error) bool {
 			if err != nil {
 				// Handle end of stream or error
-				if err.Error() == "iterator done" {
+				if err.Error() == ErrIteratorDone {
 					// Process the complete response
 					if strict {
 						resMap := make(map[string]any)
@@ -137,7 +142,7 @@ func (i *InstructorGoogle) chatStreamJSONSchema(ctx context.Context, request *Go
 		iter(func(resp *genai.GenerateContentResponse, err error) bool {
 			if err != nil {
 				// Handle end of stream or error
-				if err.Error() == "iterator done" {
+				if err.Error() == ErrIteratorDone {
 					return false // Stop iteration
 				}
 				return false // Stop iteration on error
